@@ -31,6 +31,41 @@
 
 ## 2. 推荐部署方式
 
+### 2.0 一键安装脚本
+
+如果你想直接一键安装当前二开版本，可以在全新 Linux 服务器上执行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/xftk666-alt/apierkai/main/deploy/install-custom-source.sh | sudo bash
+```
+
+脚本会自动完成：
+
+- 安装基础依赖
+- 安装 Docker / Docker Compose
+- 拉取当前二开仓库源码
+- 生成 `deploy/.env`
+- 写入默认数据库配置
+- 构建并启动当前二开版本
+
+当前默认值如下（可通过环境变量覆盖）：
+
+- `POSTGRES_USER=xwqwert`
+- `POSTGRES_DB=xwqwert`
+- `POSTGRES_PASSWORD=xw123456`
+
+例如你也可以这样自定义端口后再安装：
+
+```bash
+SERVER_PORT=18080 curl -fsSL https://raw.githubusercontent.com/xftk666-alt/apierkai/main/deploy/install-custom-source.sh | sudo bash
+```
+
+后续升级可在服务器上执行：
+
+```bash
+sudo bash /opt/sub2api/deploy/upgrade-custom-source.sh
+```
+
 ### 2.1 首次部署
 
 服务器目录示例：

@@ -81,6 +81,7 @@ Sub2API 是一个 AI API 网关平台，用于分发和管理 AI 产品订阅的
 
 - 部署覆盖文件：`deploy/docker-compose.source.yml`
 - 升级工作流文档：`deploy/CUSTOM_FORK_UPGRADE_WORKFLOW.md`
+- 一键安装脚本：`deploy/install-custom-source.sh`
 
 这样可以把你的二开改动和上游官方镜像解耦，后续同步 `sub2api` 更新时也更容易维护。
 
