@@ -73,6 +73,19 @@ Sub2API 是一个 AI API 网关平台，用于分发和管理 AI 产品订阅的
 
 ---
 
+## 二开版本说明
+
+当前仓库已包含原生电商扩展能力，覆盖模型广场、充值、订单、钱包等流程。
+
+如果你部署的是这个二开版本，建议优先使用“源码构建 + Docker Compose 覆盖文件”的方式，而不是直接使用官方预构建镜像：
+
+- 部署覆盖文件：`deploy/docker-compose.source.yml`
+- 升级工作流文档：`deploy/CUSTOM_FORK_UPGRADE_WORKFLOW.md`
+
+这样可以把你的二开改动和上游官方镜像解耦，后续同步 `sub2api` 更新时也更容易维护。
+
+---
+
 ## Nginx 反向代理注意事项
 
 通过 Nginx 反向代理 Sub2API（或 CRS 服务）并搭配 Codex CLI 使用时，需要在 Nginx 配置的 `http` 块中添加：

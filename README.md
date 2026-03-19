@@ -74,6 +74,19 @@ Community projects that extend or integrate with Sub2API:
 
 ---
 
+## Custom Fork Notes
+
+This repository includes a native commerce extension for model marketplace, top-up, orders, and wallet flows.
+
+If you are deploying this customized fork, prefer source-based Docker Compose deployment instead of the official prebuilt image:
+
+- Deployment overlay: `deploy/docker-compose.source.yml`
+- Upgrade workflow: `deploy/CUSTOM_FORK_UPGRADE_WORKFLOW.md`
+
+This keeps your secondary development changes independent from the upstream release image and makes future upstream syncs easier to manage.
+
+---
+
 ## Nginx Reverse Proxy Note
 
 When using Nginx as a reverse proxy for Sub2API (or CRS) with Codex CLI, add the following to the `http` block in your Nginx configuration:
