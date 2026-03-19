@@ -97,39 +97,92 @@ install_base_dependencies() {
     esac
 }
 
-install_docker_if_needed() {
-    if ! command_exists docker; then
-        print_info "Docker not found, installing Docker..."
-        curl -fsSL https://get.docker.com | sh
-    else
-        print_info "Docker already installed."
-    fi
-
+ensure_docker_service() {
     if command_exists systemctl; then
         systemctl enable docker >/dev/null 2>&1 || true
         systemctl start docker
     fi
+}
 
-    if ! docker compose version >/dev/null 2>&1; then
-        print_info "Docker Compose plugin not found, installing..."
-        case "${PACKAGE_MANAGER}" in
-            apt-get)
-                apt-get update
-                apt-get install -y docker-compose-plugin
-                ;;
-            dnf)
-                dnf install -y docker-compose-plugin
-                ;;
-            yum)
-                yum install -y docker-compose-plugin
-                ;;
-        esac
+install_compose_for_apt() {
+    if docker compose version >/dev/null 2>&1; then
+        return
     fi
 
-    if ! docker compose version >/dev/null 2>&1; then
-        print_error "docker compose is still unavailable after installation."
-        exit 1
+    if apt-cache show docker-compose-plugin >/dev/null 2>&1; then
+        apt-get install -y docker-compose-plugin
+        return
     fi
+
+    if command_exists docker-compose; then
+        return
+    fi
+
+    if apt-cache show docker-compose >/dev/null 2>&1; then
+        apt-get install -y docker-compose
+        return
+    fi
+
+    print_error "Neither docker compose plugin nor docker-compose is available."
+    exit 1
+}
+
+install_docker_for_apt() {
+    export DEBIAN_FRONTEND=noninteractive
+
+    if ! command_exists docker; then
+        print_info "Docker not found, installing from apt..."
+        apt-get update
+        apt-get install -y docker.io
+    else
+        print_info "Docker already installed."
+    fi
+
+    ensure_docker_service
+    install_compose_for_apt
+}
+
+resolve_compose_command() {
+    if docker compose version >/dev/null 2>&1; then
+        COMPOSE_CMD=("docker" "compose")
+        return
+    fi
+
+    if command_exists docker-compose; then
+        COMPOSE_CMD=("docker-compose")
+        return
+    fi
+
+    print_error "Neither 'docker compose' nor 'docker-compose' is available."
+    exit 1
+}
+
+install_docker_if_needed() {
+    case "${PACKAGE_MANAGER}" in
+        apt-get)
+            install_docker_for_apt
+            ;;
+        dnf)
+            if ! command_exists docker; then
+                print_info "Docker not found, installing from dnf..."
+                dnf install -y docker docker-compose-plugin || dnf install -y moby-engine docker-compose
+            else
+                print_info "Docker already installed."
+            fi
+            ensure_docker_service
+            ;;
+        yum)
+            if ! command_exists docker; then
+                print_info "Docker not found, installing from yum..."
+                yum install -y docker docker-compose-plugin || yum install -y docker docker-compose
+            else
+                print_info "Docker already installed."
+            fi
+            ensure_docker_service
+            ;;
+    esac
+
+    resolve_compose_command
 }
 
 generate_hex_secret() {
@@ -238,7 +291,7 @@ prepare_directories() {
 start_services() {
     print_info "Starting apierkai services..."
     cd "${DEPLOY_DIR}"
-    docker compose -f docker-compose.local.yml -f docker-compose.source.yml up -d --build
+    "${COMPOSE_CMD[@]}" -f docker-compose.local.yml -f docker-compose.source.yml up -d --build
 }
 
 show_summary() {
@@ -260,8 +313,8 @@ show_summary() {
     echo ""
     echo "Useful commands:"
     echo "  cd ${DEPLOY_DIR}"
-    echo "  docker compose -f docker-compose.local.yml -f docker-compose.source.yml ps"
-    echo "  docker compose -f docker-compose.local.yml -f docker-compose.source.yml logs -f sub2api"
+    echo "  ${COMPOSE_CMD[*]} -f docker-compose.local.yml -f docker-compose.source.yml ps"
+    echo "  ${COMPOSE_CMD[*]} -f docker-compose.local.yml -f docker-compose.source.yml logs -f sub2api"
     echo ""
     print_warning "Please save the admin password and .env file securely."
 }

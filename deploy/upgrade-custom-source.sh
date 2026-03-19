@@ -29,6 +29,21 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+resolve_compose_command() {
+    if docker compose version >/dev/null 2>&1; then
+        COMPOSE_CMD=("docker" "compose")
+        return
+    fi
+
+    if command_exists docker-compose; then
+        COMPOSE_CMD=("docker-compose")
+        return
+    fi
+
+    print_error "Neither 'docker compose' nor 'docker-compose' is available."
+    exit 1
+}
+
 require_root() {
     if [ "$(id -u)" -ne 0 ]; then
         print_error "Please run this script as root or with sudo."
@@ -49,7 +64,9 @@ main() {
         exit 1
     fi
 
-    if ! docker compose version >/dev/null 2>&1; then
+    resolve_compose_command
+
+    if [ "${#COMPOSE_CMD[@]}" -eq 0 ]; then
         print_error "docker compose is required."
         exit 1
     fi
@@ -67,7 +84,7 @@ main() {
 
     print_info "Rebuilding and restarting services..."
     cd "${DEPLOY_DIR}"
-    docker compose -f docker-compose.local.yml -f docker-compose.source.yml up -d --build
+    "${COMPOSE_CMD[@]}" -f docker-compose.local.yml -f docker-compose.source.yml up -d --build
 
     print_success "Upgrade completed."
     echo "Current commit: $(git -C "${INSTALL_DIR}" rev-parse --short HEAD)"
