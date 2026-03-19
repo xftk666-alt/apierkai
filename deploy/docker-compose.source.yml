@@ -5,6 +5,10 @@ services:
       context: ..
       dockerfile: Dockerfile
       args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:24-alpine}
+        GOLANG_IMAGE: ${GOLANG_IMAGE:-golang:1.26.1-alpine}
+        ALPINE_IMAGE: ${ALPINE_IMAGE:-alpine:3.21}
+        POSTGRES_IMAGE: ${POSTGRES_IMAGE:-postgres:18-alpine}
         VERSION: ${SUB2API_BUILD_VERSION:-}
         COMMIT: ${SUB2API_BUILD_COMMIT:-custom}
         DATE: ${SUB2API_BUILD_DATE:-}
