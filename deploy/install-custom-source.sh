@@ -86,7 +86,7 @@ install_base_dependencies() {
     case "${PACKAGE_MANAGER}" in
         apt-get)
             apt-get update
-            apt-get install -y ca-certificates curl git grep sed coreutils openssl
+            apt-get install -y ca-certificates curl git grep sed coreutils openssl gnupg
             ;;
         dnf)
             dnf install -y ca-certificates curl git grep sed coreutils openssl
@@ -127,19 +127,51 @@ install_compose_for_apt() {
     exit 1
 }
 
+setup_docker_apt_repo() {
+    local codename
+    local architecture
+
+    codename=""
+    architecture="$(dpkg --print-architecture)"
+
+    if [ -f /etc/os-release ]; then
+        # shellcheck disable=SC1091
+        . /etc/os-release
+        codename="${VERSION_CODENAME:-}"
+    fi
+
+    if [ -z "${codename}" ]; then
+        codename="focal"
+    fi
+
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    chmod a+r /etc/apt/keyrings/docker.asc
+    echo "deb [arch=${architecture} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${codename} stable" >/etc/apt/sources.list.d/docker.list
+}
+
 install_docker_for_apt() {
     export DEBIAN_FRONTEND=noninteractive
 
-    if ! command_exists docker; then
-        print_info "Docker not found, installing from apt..."
+    if ! docker compose version >/dev/null 2>&1; then
+        print_info "Installing Docker Engine and Compose plugin from Docker apt repository..."
         apt-get update
-        apt-get install -y docker.io
-    else
-        print_info "Docker already installed."
+        apt-get install -y ca-certificates curl gnupg
+        setup_docker_apt_repo
+        apt-get update
+        apt-get remove -y docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc >/dev/null 2>&1 || true
+        apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        print_success "Docker Engine and Compose plugin installed."
+    elif command_exists docker; then
+        print_info "Docker and Compose plugin already installed."
     fi
 
     ensure_docker_service
-    install_compose_for_apt
+
+    if ! docker compose version >/dev/null 2>&1; then
+        print_warning "Docker Compose plugin is unavailable, trying legacy docker-compose..."
+        install_compose_for_apt
+    fi
 }
 
 resolve_compose_command() {
