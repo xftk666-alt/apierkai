@@ -10,3 +10,5 @@ services:
         DATE: ${SUB2API_BUILD_DATE:-}
         GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
         GOSUMDB: ${GOSUMDB:-sum.golang.google.cn}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+        PNPM_VERSION: ${PNPM_VERSION:-9}
