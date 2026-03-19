@@ -116,6 +116,28 @@ func (s *SettingService) GetAllSettings(ctx context.Context) (*SystemSettings, e
 	return s.parseSettings(settings), nil
 }
 
+func (s *SettingService) GetCommerceCallbackSecret(ctx context.Context) (string, error) {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyCommerceCallbackSecret)
+	if err != nil {
+		if errors.Is(err, ErrSettingNotFound) {
+			return "", nil
+		}
+		return "", fmt.Errorf("get commerce callback secret: %w", err)
+	}
+	return strings.TrimSpace(value), nil
+}
+
+func (s *SettingService) GetCommercePaymentProviders(ctx context.Context) ([]CommercePaymentProviderSetting, error) {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyCommercePaymentProviders)
+	if err != nil {
+		if errors.Is(err, ErrSettingNotFound) {
+			return []CommercePaymentProviderSetting{}, nil
+		}
+		return nil, fmt.Errorf("get commerce payment providers: %w", err)
+	}
+	return ParseCommercePaymentProviderSettings(value), nil
+}
+
 // GetFrontendURL 获取前端基础URL（数据库优先，fallback 到配置文件）
 func (s *SettingService) GetFrontendURL(ctx context.Context) string {
 	val, err := s.settingRepo.GetValue(ctx, SettingKeyFrontendURL)
@@ -147,6 +169,10 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyHideCcsImportButton,
 		SettingKeyPurchaseSubscriptionEnabled,
 		SettingKeyPurchaseSubscriptionURL,
+		SettingKeyNativeMarketplaceEnabled,
+		SettingKeyNativeWalletEnabled,
+		SettingKeyNativeOrdersEnabled,
+		SettingKeyNativePurchaseMode,
 		SettingKeySoraClientEnabled,
 		SettingKeyCustomMenuItems,
 		SettingKeyLinuxDoConnectEnabled,
@@ -192,6 +218,10 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		HideCcsImportButton:              settings[SettingKeyHideCcsImportButton] == "true",
 		PurchaseSubscriptionEnabled:      settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
 		PurchaseSubscriptionURL:          strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
+		NativeMarketplaceEnabled:         settings[SettingKeyNativeMarketplaceEnabled] == "true",
+		NativeWalletEnabled:              settings[SettingKeyNativeWalletEnabled] == "true",
+		NativeOrdersEnabled:              settings[SettingKeyNativeOrdersEnabled] == "true",
+		NativePurchaseMode:               NormalizeCommercePurchaseMode(settings[SettingKeyNativePurchaseMode]),
 		SoraClientEnabled:                settings[SettingKeySoraClientEnabled] == "true",
 		CustomMenuItems:                  settings[SettingKeyCustomMenuItems],
 		LinuxDoOAuthEnabled:              linuxDoEnabled,
@@ -244,6 +274,10 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		HideCcsImportButton              bool            `json:"hide_ccs_import_button"`
 		PurchaseSubscriptionEnabled      bool            `json:"purchase_subscription_enabled"`
 		PurchaseSubscriptionURL          string          `json:"purchase_subscription_url,omitempty"`
+		NativeMarketplaceEnabled         bool            `json:"native_marketplace_enabled"`
+		NativeWalletEnabled              bool            `json:"native_wallet_enabled"`
+		NativeOrdersEnabled              bool            `json:"native_orders_enabled"`
+		NativePurchaseMode               string          `json:"native_purchase_mode"`
 		SoraClientEnabled                bool            `json:"sora_client_enabled"`
 		CustomMenuItems                  json.RawMessage `json:"custom_menu_items"`
 		LinuxDoOAuthEnabled              bool            `json:"linuxdo_oauth_enabled"`
@@ -269,6 +303,10 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		HideCcsImportButton:              settings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:      settings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:          settings.PurchaseSubscriptionURL,
+		NativeMarketplaceEnabled:         settings.NativeMarketplaceEnabled,
+		NativeWalletEnabled:              settings.NativeWalletEnabled,
+		NativeOrdersEnabled:              settings.NativeOrdersEnabled,
+		NativePurchaseMode:               settings.NativePurchaseMode,
 		SoraClientEnabled:                settings.SoraClientEnabled,
 		CustomMenuItems:                  filterUserVisibleMenuItems(settings.CustomMenuItems),
 		LinuxDoOAuthEnabled:              settings.LinuxDoOAuthEnabled,
@@ -451,6 +489,14 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 	updates[SettingKeyHideCcsImportButton] = strconv.FormatBool(settings.HideCcsImportButton)
 	updates[SettingKeyPurchaseSubscriptionEnabled] = strconv.FormatBool(settings.PurchaseSubscriptionEnabled)
 	updates[SettingKeyPurchaseSubscriptionURL] = strings.TrimSpace(settings.PurchaseSubscriptionURL)
+	updates[SettingKeyNativeMarketplaceEnabled] = strconv.FormatBool(settings.NativeMarketplaceEnabled)
+	updates[SettingKeyNativeWalletEnabled] = strconv.FormatBool(settings.NativeWalletEnabled)
+	updates[SettingKeyNativeOrdersEnabled] = strconv.FormatBool(settings.NativeOrdersEnabled)
+	updates[SettingKeyNativePurchaseMode] = NormalizeCommercePurchaseMode(settings.NativePurchaseMode)
+	if strings.TrimSpace(settings.CommerceCallbackSecret) != "" {
+		updates[SettingKeyCommerceCallbackSecret] = strings.TrimSpace(settings.CommerceCallbackSecret)
+	}
+	updates[SettingKeyCommercePaymentProviders] = settings.CommercePaymentProviders
 	updates[SettingKeySoraClientEnabled] = strconv.FormatBool(settings.SoraClientEnabled)
 	updates[SettingKeyCustomMenuItems] = settings.CustomMenuItems
 
@@ -735,6 +781,12 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeySiteLogo:                         "",
 		SettingKeyPurchaseSubscriptionEnabled:      "false",
 		SettingKeyPurchaseSubscriptionURL:          "",
+		SettingKeyNativeMarketplaceEnabled:         "false",
+		SettingKeyNativeWalletEnabled:              "false",
+		SettingKeyNativeOrdersEnabled:              "false",
+		SettingKeyNativePurchaseMode:               CommercePurchaseModeIframe,
+		SettingKeyCommerceCallbackSecret:           "",
+		SettingKeyCommercePaymentProviders:         "[]",
 		SettingKeySoraClientEnabled:                "false",
 		SettingKeyCustomMenuItems:                  "[]",
 		SettingKeyDefaultConcurrency:               strconv.Itoa(s.cfg.Default.UserConcurrency),
@@ -799,6 +851,12 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		HideCcsImportButton:              settings[SettingKeyHideCcsImportButton] == "true",
 		PurchaseSubscriptionEnabled:      settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
 		PurchaseSubscriptionURL:          strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
+		NativeMarketplaceEnabled:         settings[SettingKeyNativeMarketplaceEnabled] == "true",
+		NativeWalletEnabled:              settings[SettingKeyNativeWalletEnabled] == "true",
+		NativeOrdersEnabled:              settings[SettingKeyNativeOrdersEnabled] == "true",
+		NativePurchaseMode:               NormalizeCommercePurchaseMode(settings[SettingKeyNativePurchaseMode]),
+		CommerceCallbackSecretConfigured: strings.TrimSpace(settings[SettingKeyCommerceCallbackSecret]) != "",
+		CommercePaymentProviders:         settings[SettingKeyCommercePaymentProviders],
 		SoraClientEnabled:                settings[SettingKeySoraClientEnabled] == "true",
 		CustomMenuItems:                  settings[SettingKeyCustomMenuItems],
 		BackendModeEnabled:               settings[SettingKeyBackendModeEnabled] == "true",
@@ -828,6 +886,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	// 敏感信息直接返回，方便测试连接时使用
 	result.SMTPPassword = settings[SettingKeySMTPPassword]
 	result.TurnstileSecretKey = settings[SettingKeyTurnstileSecretKey]
+	result.CommerceCallbackSecret = strings.TrimSpace(settings[SettingKeyCommerceCallbackSecret])
 
 	// LinuxDo Connect 设置：
 	// - 兼容 config.yaml/env（避免老部署因为未迁移到数据库设置而被意外关闭）
@@ -860,6 +919,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		result.LinuxDoConnectClientSecret = strings.TrimSpace(linuxDoBase.ClientSecret)
 	}
 	result.LinuxDoConnectClientSecretConfigured = result.LinuxDoConnectClientSecret != ""
+	result.CommerceCallbackSecretConfigured = result.CommerceCallbackSecret != ""
 
 	// Model fallback settings
 	result.EnableModelFallback = settings[SettingKeyEnableModelFallback] == "true"

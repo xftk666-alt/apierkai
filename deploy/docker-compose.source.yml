@@ -1,0 +1,12 @@
+services:
+  sub2api:
+    image: sub2api-custom:${SUB2API_IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        VERSION: ${SUB2API_BUILD_VERSION:-}
+        COMMIT: ${SUB2API_BUILD_COMMIT:-custom}
+        DATE: ${SUB2API_BUILD_DATE:-}
+        GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
+        GOSUMDB: ${GOSUMDB:-sum.golang.google.cn}

@@ -118,6 +118,12 @@ const (
 	SettingKeyHideCcsImportButton         = "hide_ccs_import_button"        // 是否隐藏 API Keys 页面的导入 CCS 按钮
 	SettingKeyPurchaseSubscriptionEnabled = "purchase_subscription_enabled" // 是否展示"购买订阅"页面入口
 	SettingKeyPurchaseSubscriptionURL     = "purchase_subscription_url"     // "购买订阅"页面 URL（作为 iframe src）
+	SettingKeyNativeMarketplaceEnabled    = "native_marketplace_enabled"    // 是否展示原生模型广场入口
+	SettingKeyNativeWalletEnabled         = "native_wallet_enabled"         // 是否展示原生钱包入口
+	SettingKeyNativeOrdersEnabled         = "native_orders_enabled"         // 是否展示原生订单入口
+	SettingKeyNativePurchaseMode          = "native_purchase_mode"          // 商业化入口模式：iframe/native
+	SettingKeyCommerceCallbackSecret      = "commerce_callback_secret"      // 支付回调共享密钥（仅后台可见）
+	SettingKeyCommercePaymentProviders    = "commerce_payment_providers"    // 商业化支付渠道配置（JSON）
 	SettingKeyCustomMenuItems             = "custom_menu_items"             // 自定义菜单项（JSON 数组）
 
 	// 默认配置

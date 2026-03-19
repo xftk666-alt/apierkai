@@ -103,11 +103,259 @@ export interface PublicSettings {
   hide_ccs_import_button: boolean
   purchase_subscription_enabled: boolean
   purchase_subscription_url: string
+  native_marketplace_enabled: boolean
+  native_wallet_enabled: boolean
+  native_orders_enabled: boolean
+  native_purchase_mode: 'iframe' | 'native' | string
   custom_menu_items: CustomMenuItem[]
   linuxdo_oauth_enabled: boolean
   sora_client_enabled: boolean
   backend_mode_enabled: boolean
   version: string
+}
+
+export type CommerceProductType =
+  | 'topup_balance'
+  | 'subscription_group'
+  | 'standard_group_access'
+  | 'combo'
+
+export type CommercePriceType = 'one_time' | 'monthly' | 'quarterly' | 'yearly'
+
+export type CommerceGrantType = 'subscription' | 'allowed_group'
+
+export type CommerceBindingType = 'primary' | 'upsell' | 'topup'
+
+export type CommerceOrderStatus = 'pending' | 'paid' | 'completed' | 'expired' | 'cancelled' | string
+
+export type CommercePaymentStatus = 'pending' | 'succeeded' | 'failed' | 'refunded' | string
+
+export type CommerceWalletDirection = 'credit' | 'debit' | string
+
+export interface CommercePaymentProviderOption {
+  code: string
+  name: string
+  description: string
+  icon: string
+  sort_order: number
+}
+
+export interface CommercePaymentProviderConfig extends CommercePaymentProviderOption {
+  checkout_url: string
+  enabled: boolean
+}
+
+export interface CommerceCatalogFeatures {
+  purchase_enabled: boolean
+  purchase_mode: 'iframe' | 'native' | string
+  marketplace_enabled: boolean
+  wallet_enabled: boolean
+  orders_enabled: boolean
+  legacy_purchase_url: string
+  payment_providers: CommercePaymentProviderOption[]
+}
+
+export interface CommerceCatalogPrice {
+  id: number
+  price_type: CommercePriceType | string
+  amount: number
+  currency: string
+  original_amount: number | null
+  enabled: boolean
+  sort_order: number
+}
+
+export interface CommerceCatalogGrant {
+  id: number
+  group_id: number
+  group_name: string
+  grant_type: CommerceGrantType | string
+  validity_days: number
+  priority: number
+}
+
+export interface CommerceCatalogProduct {
+  id: number
+  code: string
+  name: string
+  description: string
+  product_type: CommerceProductType | string
+  status: 'draft' | 'active' | 'disabled' | string
+  cover_image: string
+  tags: string[]
+  sort_order: number
+  recommended: boolean
+  metadata: Record<string, unknown>
+  prices: CommerceCatalogPrice[]
+  grants: CommerceCatalogGrant[]
+}
+
+export interface CommerceCatalogOffer {
+  binding_id: number
+  binding_type: CommerceBindingType | string
+  product: CommerceCatalogProduct
+}
+
+export interface CommerceCatalogModel {
+  id: number
+  model_key: string
+  display_name: string
+  description: string
+  vendor: string
+  icon: string
+  tags: string[]
+  status: 'draft' | 'active' | 'disabled' | string
+  sort_order: number
+  recommended: boolean
+  metadata: Record<string, unknown>
+  offers: CommerceCatalogOffer[]
+}
+
+export interface CommerceCatalog {
+  features: CommerceCatalogFeatures
+  products: CommerceCatalogProduct[]
+  models: CommerceCatalogModel[]
+}
+
+export interface CommerceOrderSnapshotProduct {
+  id: number
+  code: string
+  name: string
+  description: string
+  product_type: CommerceProductType | string
+  status: 'draft' | 'active' | 'disabled' | string
+  cover_image: string
+  tags: string[]
+  sort_order: number
+  recommended: boolean
+  metadata: Record<string, unknown>
+}
+
+export interface CommerceOrderSnapshot {
+  product: CommerceOrderSnapshotProduct
+  price: CommerceCatalogPrice
+  grants: CommerceCatalogGrant[]
+}
+
+export interface CommerceOrderPaymentAction {
+  provider: string
+  provider_name: string
+  checkout_url: string
+}
+
+export interface CommerceOrderPaymentTransaction {
+  id: number
+  order_id: number
+  provider: string
+  provider_trade_no: string
+  status: string
+  request_payload: string
+  callback_payload: string
+  paid_amount: number
+  paid_currency: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CommerceOrder {
+  id: number
+  order_no: string
+  user_id: number
+  product_id: number
+  price_id: number
+  status: CommerceOrderStatus
+  payment_status: CommercePaymentStatus
+  payment_provider: string
+  amount: number
+  currency: string
+  snapshot: CommerceOrderSnapshot
+  payment_action?: CommerceOrderPaymentAction | null
+  payment_transaction?: CommerceOrderPaymentTransaction | null
+  paid_at: string | null
+  expired_at: string | null
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CommerceWalletLedger {
+  id: number
+  user_id: number
+  order_id: number | null
+  order_no: string
+  direction: CommerceWalletDirection
+  change_amount: number
+  balance_before: number
+  balance_after: number
+  reason_type: string
+  reason_detail: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CommerceProductPriceInput {
+  price_type: CommercePriceType | string
+  amount: number
+  currency: string
+  original_amount?: number | null
+  enabled?: boolean
+  sort_order: number
+}
+
+export interface CommerceProductGrantInput {
+  group_id: number
+  grant_type: CommerceGrantType | string
+  validity_days: number
+  priority: number
+}
+
+export interface CommerceProductUpsertRequest {
+  code: string
+  name: string
+  description: string
+  product_type: CommerceProductType | string
+  status: 'draft' | 'active' | 'disabled' | string
+  cover_image: string
+  tags: string[]
+  sort_order: number
+  recommended: boolean
+  metadata: Record<string, unknown>
+  prices: CommerceProductPriceInput[]
+  group_bindings: CommerceProductGrantInput[]
+}
+
+export interface CommerceModelProductBindingInput {
+  product_id: number
+  binding_type: CommerceBindingType | string
+}
+
+export interface CommerceModelUpsertRequest {
+  model_key: string
+  display_name: string
+  description: string
+  vendor: string
+  icon: string
+  tags: string[]
+  status: 'draft' | 'active' | 'disabled' | string
+  sort_order: number
+  recommended: boolean
+  metadata: Record<string, unknown>
+  product_bindings: CommerceModelProductBindingInput[]
+}
+
+export interface CommerceOrderCreateRequest {
+  product_id: number
+  price_id: number
+  payment_provider?: string
+}
+
+export interface CommerceOrderManualCompleteRequest {
+  payment_provider?: string
+  provider_trade_no?: string
+  request_payload?: string
+  callback_payload?: string
+  paid_amount?: number | null
+  paid_currency?: string
 }
 
 export interface AuthResponse {

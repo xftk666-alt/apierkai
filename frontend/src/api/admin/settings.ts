@@ -4,7 +4,7 @@
  */
 
 import { apiClient } from '../client'
-import type { CustomMenuItem } from '@/types'
+import type { CommercePaymentProviderConfig, CustomMenuItem } from '@/types'
 
 export interface DefaultSubscriptionSetting {
   group_id: number
@@ -40,6 +40,12 @@ export interface SystemSettings {
   hide_ccs_import_button: boolean
   purchase_subscription_enabled: boolean
   purchase_subscription_url: string
+  native_marketplace_enabled: boolean
+  native_wallet_enabled: boolean
+  native_orders_enabled: boolean
+  native_purchase_mode: 'iframe' | 'native' | string
+  commerce_callback_secret_configured: boolean
+  commerce_payment_providers: CommercePaymentProviderConfig[]
   sora_client_enabled: boolean
   backend_mode_enabled: boolean
   custom_menu_items: CustomMenuItem[]
@@ -108,6 +114,12 @@ export interface UpdateSettingsRequest {
   hide_ccs_import_button?: boolean
   purchase_subscription_enabled?: boolean
   purchase_subscription_url?: string
+  native_marketplace_enabled?: boolean
+  native_wallet_enabled?: boolean
+  native_orders_enabled?: boolean
+  native_purchase_mode?: 'iframe' | 'native' | string
+  commerce_callback_secret?: string
+  commerce_payment_providers?: CommercePaymentProviderConfig[]
   sora_client_enabled?: boolean
   backend_mode_enabled?: boolean
   custom_menu_items?: CustomMenuItem[]

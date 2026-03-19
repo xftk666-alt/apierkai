@@ -1342,6 +1342,19 @@
               <Toggle v-model="form.purchase_subscription_enabled" />
             </div>
 
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.purchase.mode') }}
+              </label>
+              <select v-model="form.native_purchase_mode" class="input">
+                <option value="iframe">{{ t('admin.settings.purchase.modeOptionsIframe') }}</option>
+                <option value="native">{{ t('admin.settings.purchase.modeOptionsNative') }}</option>
+              </select>
+              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.purchase.modeHint') }}
+              </p>
+            </div>
+
             <!-- URL -->
             <div>
               <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1354,11 +1367,643 @@
                 :placeholder="t('admin.settings.purchase.urlPlaceholder')"
               />
               <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                {{ t('admin.settings.purchase.urlHint') }}
+                {{
+                  form.native_purchase_mode === 'native'
+                    ? t('admin.settings.purchase.urlHintOptional')
+                    : t('admin.settings.purchase.urlHint')
+                }}
               </p>
-              <p class="mt-2 text-xs text-amber-600 dark:text-amber-400">
+              <p
+                v-if="form.native_purchase_mode === 'iframe'"
+                class="mt-2 text-xs text-amber-600 dark:text-amber-400"
+              >
                 {{ t('admin.settings.purchase.iframeWarning') }}
               </p>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-3">
+              <div class="rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <label class="font-medium text-gray-900 dark:text-white">
+                      {{ t('admin.settings.purchase.nativeMarketplaceEnabled') }}
+                    </label>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t('admin.settings.purchase.nativeMarketplaceHint') }}
+                    </p>
+                  </div>
+                  <Toggle v-model="form.native_marketplace_enabled" />
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <label class="font-medium text-gray-900 dark:text-white">
+                      {{ t('admin.settings.purchase.nativeWalletEnabled') }}
+                    </label>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t('admin.settings.purchase.nativeWalletHint') }}
+                    </p>
+                  </div>
+                  <Toggle v-model="form.native_wallet_enabled" />
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <label class="font-medium text-gray-900 dark:text-white">
+                      {{ t('admin.settings.purchase.nativeOrdersEnabled') }}
+                    </label>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t('admin.settings.purchase.nativeOrdersHint') }}
+                    </p>
+                  </div>
+                  <Toggle v-model="form.native_orders_enabled" />
+                </div>
+              </div>
+            </div>
+
+            <div class="grid gap-4 lg:grid-cols-2">
+              <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.purchase.callbackSecret') }}
+                </label>
+                <input
+                  v-model="form.commerce_callback_secret"
+                  type="password"
+                  class="input font-mono text-sm"
+                  autocomplete="new-password"
+                  :placeholder="
+                    form.commerce_callback_secret_configured
+                      ? t('admin.settings.purchase.callbackSecretConfiguredPlaceholder')
+                      : t('admin.settings.purchase.callbackSecretPlaceholder')
+                  "
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{
+                    form.commerce_callback_secret_configured
+                      ? t('admin.settings.purchase.callbackSecretConfiguredHint')
+                      : t('admin.settings.purchase.callbackSecretHint')
+                  }}
+                </p>
+              </div>
+
+              <div class="rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                <div class="space-y-3">
+                  <div>
+                    <p class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                      {{ t('admin.settings.purchase.callbackEndpoint') }}
+                    </p>
+                    <code class="mt-1 block break-all rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:bg-dark-800 dark:text-gray-200">
+                      {{ commerceCallbackEndpointSuggestion }}
+                    </code>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t('admin.settings.purchase.callbackEndpointHint') }}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                      {{ t('admin.settings.purchase.callbackHeader') }}
+                    </p>
+                    <code class="mt-1 block break-all rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:bg-dark-800 dark:text-gray-200">
+                      {{ commerceCallbackHeaderName }}: &lt;your-secret&gt;
+                    </code>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t('admin.settings.purchase.callbackHeaderHint') }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">
+                    {{ t('admin.settings.purchase.providersTitle') }}
+                  </p>
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('admin.settings.purchase.providersHint') }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  @click="addCommercePaymentProvider"
+                >
+                  {{ t('admin.settings.purchase.providerAdd') }}
+                </button>
+              </div>
+
+              <div
+                v-if="form.commerce_payment_providers.length === 0"
+                class="rounded-2xl border border-dashed border-gray-200 p-4 text-sm text-gray-500 dark:border-dark-700 dark:text-gray-400"
+              >
+                {{ t('admin.settings.purchase.providersEmpty') }}
+              </div>
+
+              <div v-else class="space-y-4">
+                <div
+                  v-for="(provider, index) in form.commerce_payment_providers"
+                  :key="`commerce-provider-${index}-${provider.code || 'new'}`"
+                  class="rounded-2xl border border-gray-200 p-4 dark:border-dark-700"
+                >
+                  <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p class="font-medium text-gray-900 dark:text-white">
+                        {{ provider.name || provider.code || `${t('admin.settings.purchase.providerCard')} #${index + 1}` }}
+                      </p>
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {{ provider.code || t('admin.settings.purchase.providerCodeHint') }}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm text-red-600 hover:text-red-700 dark:text-red-400"
+                      @click="removeCommercePaymentProvider(index)"
+                    >
+                      {{ t('admin.settings.purchase.providerRemove') }}
+                    </button>
+                  </div>
+
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ t('admin.settings.purchase.providerCode') }}
+                      </label>
+                      <input
+                        v-model="provider.code"
+                        type="text"
+                        class="input font-mono text-sm"
+                        :placeholder="t('admin.settings.purchase.providerCodePlaceholder')"
+                      />
+                    </div>
+
+                    <div>
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ t('admin.settings.purchase.providerName') }}
+                      </label>
+                      <input
+                        v-model="provider.name"
+                        type="text"
+                        class="input"
+                        :placeholder="t('admin.settings.purchase.providerNamePlaceholder')"
+                      />
+                    </div>
+
+                    <div class="md:col-span-2">
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ t('admin.settings.purchase.providerDescription') }}
+                      </label>
+                      <input
+                        v-model="provider.description"
+                        type="text"
+                        class="input"
+                        :placeholder="t('admin.settings.purchase.providerDescriptionPlaceholder')"
+                      />
+                    </div>
+
+                    <div>
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ t('admin.settings.purchase.providerIcon') }}
+                      </label>
+                      <input
+                        v-model="provider.icon"
+                        type="url"
+                        class="input"
+                        :placeholder="t('admin.settings.purchase.providerIconPlaceholder')"
+                      />
+                    </div>
+
+                    <div>
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ t('admin.settings.purchase.providerSortOrder') }}
+                      </label>
+                      <input
+                        v-model.number="provider.sort_order"
+                        type="number"
+                        class="input"
+                        min="1"
+                      />
+                    </div>
+
+                    <div class="md:col-span-2">
+                      <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {{ t('admin.settings.purchase.providerCheckoutUrl') }}
+                      </label>
+                      <input
+                        v-model="provider.checkout_url"
+                        type="url"
+                        class="input font-mono text-sm"
+                        :placeholder="t('admin.settings.purchase.providerCheckoutUrlPlaceholder')"
+                      />
+                      <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                        {{ t('admin.settings.purchase.providerTemplateHint') }}
+                      </p>
+                    </div>
+
+                    <div class="md:col-span-2">
+                      <div class="flex items-center justify-between rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                        <div>
+                          <label class="font-medium text-gray-900 dark:text-white">
+                            {{ t('admin.settings.purchase.providerEnabled') }}
+                          </label>
+                          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            {{ t('admin.settings.purchase.providerEnabledHint') }}
+                          </p>
+                        </div>
+                        <Toggle v-model="provider.enabled" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                <p class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.purchase.providerTemplateVars') }}
+                </p>
+                <code class="mt-2 block break-all rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:bg-dark-800 dark:text-gray-200">
+                  {order_id} {order_no} {user_id} {product_id} {price_id} {amount} {currency}
+                  {payment_provider}
+                </code>
+              </div>
+
+              <div class="grid gap-4 xl:grid-cols-2">
+                <div class="rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-medium text-gray-900 dark:text-white">
+                        {{ t('admin.settings.purchase.providerExampleTitle') }}
+                      </p>
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {{ t('admin.settings.purchase.providerExampleHint') }}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      @click="copyCommerceProviderExample"
+                    >
+                      {{ t('admin.settings.purchase.providerExampleCopy') }}
+                    </button>
+                  </div>
+                  <pre class="mt-3 overflow-x-auto rounded-lg bg-gray-50 px-3 py-3 text-xs text-gray-700 dark:bg-dark-800 dark:text-gray-200"><code>{{ commercePaymentProviderExampleJSON }}</code></pre>
+                </div>
+
+                <div class="rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-medium text-gray-900 dark:text-white">
+                        {{ t('admin.settings.purchase.callbackExampleTitle') }}
+                      </p>
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {{ t('admin.settings.purchase.callbackExampleHint') }}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      @click="copyCommerceCallbackExample"
+                    >
+                      {{ t('admin.settings.purchase.callbackExampleCopy') }}
+                    </button>
+                  </div>
+                  <pre class="mt-3 overflow-x-auto rounded-lg bg-gray-50 px-3 py-3 text-xs text-gray-700 dark:bg-dark-800 dark:text-gray-200"><code>{{ commerceCallbackCurlExample }}</code></pre>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">
+                      {{ t('admin.settings.purchase.callbackDebugTitle') }}
+                    </p>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t('admin.settings.purchase.callbackDebugHint') }}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ t('admin.settings.purchase.callbackDebugProvider') }}
+                    </label>
+                    <input
+                      v-model="commerceCallbackDebugForm.provider"
+                      type="text"
+                      class="input font-mono text-sm"
+                      :placeholder="t('admin.settings.purchase.callbackDebugProviderPlaceholder')"
+                    />
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t('admin.settings.purchase.callbackDebugProviderHint') }}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ t('admin.settings.purchase.manualCompleteOrderId') }}
+                    </label>
+                    <input
+                      v-model.number="commerceCallbackDebugForm.order_id"
+                      type="number"
+                      min="1"
+                      step="1"
+                      class="input"
+                      :placeholder="t('admin.settings.purchase.manualCompleteOrderIdPlaceholder')"
+                    />
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t('admin.settings.purchase.manualCompleteOrderIdHint') }}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ t('admin.settings.purchase.callbackDebugOrderNo') }}
+                    </label>
+                    <input
+                      v-model="commerceCallbackDebugForm.order_no"
+                      type="text"
+                      class="input font-mono text-sm"
+                      :placeholder="t('admin.settings.purchase.callbackDebugOrderNoPlaceholder')"
+                    />
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm"
+                        :disabled="commerceOrderLookupLoading"
+                        @click="lookupCommerceOrderByOrderNo"
+                      >
+                        {{
+                          commerceOrderLookupLoading
+                            ? t('admin.settings.purchase.callbackDebugLookupLoading')
+                            : t('admin.settings.purchase.callbackDebugLookupAction')
+                        }}
+                      </button>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ t('admin.settings.purchase.callbackDebugLookupHint') }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ t('admin.settings.purchase.callbackDebugTradeNo') }}
+                    </label>
+                    <input
+                      v-model="commerceCallbackDebugForm.provider_trade_no"
+                      type="text"
+                      class="input font-mono text-sm"
+                      :placeholder="t('admin.settings.purchase.callbackDebugTradeNoPlaceholder')"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ t('admin.settings.purchase.callbackDebugAmount') }}
+                    </label>
+                    <input
+                      v-model.number="commerceCallbackDebugForm.paid_amount"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="input"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ t('admin.settings.purchase.callbackDebugCurrency') }}
+                    </label>
+                    <input
+                      v-model="commerceCallbackDebugForm.paid_currency"
+                      type="text"
+                      class="input font-mono text-sm uppercase"
+                      placeholder="CNY"
+                    />
+                  </div>
+                </div>
+
+                <div class="mt-4 rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        {{ t('admin.settings.purchase.callbackDebugLookupResult') }}
+                      </p>
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {{ t('admin.settings.purchase.callbackDebugLookupResultHint') }}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      :disabled="!commerceOrderLookupResult && !commerceCallbackDebugForm.order_no.trim()"
+                      @click="openCommerceOrdersFromLookup"
+                    >
+                      {{ t('admin.settings.purchase.callbackDebugOpenOrdersAction') }}
+                    </button>
+                  </div>
+
+                  <div
+                    v-if="commerceOrderLookupResult"
+                    class="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4"
+                  >
+                    <div>
+                      <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-dark-400">
+                        {{ t('admin.settings.purchase.callbackDebugLookupFieldOrderId') }}
+                      </p>
+                      <p class="mt-1 font-mono text-sm text-gray-900 dark:text-white">
+                        #{{ commerceOrderLookupResult.id }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-dark-400">
+                        {{ t('admin.settings.purchase.callbackDebugLookupFieldProduct') }}
+                      </p>
+                      <p class="mt-1 text-sm text-gray-900 dark:text-white">
+                        {{ commerceOrderLookupResult.snapshot.product.name }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-dark-400">
+                        {{ t('admin.settings.purchase.callbackDebugLookupFieldUser') }}
+                      </p>
+                      <p class="mt-1 text-sm text-gray-900 dark:text-white">
+                        #{{ commerceOrderLookupResult.user_id }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-dark-400">
+                        {{ t('admin.settings.purchase.callbackDebugLookupFieldStatus') }}
+                      </p>
+                      <p class="mt-1 text-sm text-gray-900 dark:text-white">
+                        {{ commerceOrderLookupResult.status }} / {{ commerceOrderLookupResult.payment_status }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-dark-400">
+                        {{ t('admin.settings.purchase.callbackDebugLookupFieldAmount') }}
+                      </p>
+                      <p class="mt-1 text-sm text-gray-900 dark:text-white">
+                        {{ commerceOrderLookupResult.amount }} {{ commerceOrderLookupResult.currency }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-dark-400">
+                        {{ t('admin.settings.purchase.callbackDebugLookupFieldProvider') }}
+                      </p>
+                      <p class="mt-1 font-mono text-sm text-gray-900 dark:text-white">
+                        {{ commerceOrderLookupResult.payment_provider || '-' }}
+                      </p>
+                    </div>
+                    <div class="md:col-span-2 xl:col-span-2">
+                      <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-dark-400">
+                        {{ t('admin.settings.purchase.callbackDebugLookupFieldOrderNo') }}
+                      </p>
+                      <p class="mt-1 font-mono text-sm text-gray-900 dark:text-white">
+                        {{ commerceOrderLookupResult.order_no }}
+                      </p>
+                    </div>
+                  </div>
+                  <p v-else class="mt-3 text-sm text-gray-500 dark:text-dark-400">
+                    {{ t('admin.settings.purchase.callbackDebugLookupResultEmpty') }}
+                  </p>
+                </div>
+
+                <div class="mt-4 grid gap-4 xl:grid-cols-2">
+                  <div class="rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                          {{ t('admin.settings.purchase.callbackDebugEndpoint') }}
+                        </p>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          {{ t('admin.settings.purchase.callbackDebugEndpointHint') }}
+                        </p>
+                      </div>
+                    </div>
+                    <code class="mt-2 block break-all rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:bg-dark-800 dark:text-gray-200">
+                      {{ commerceCallbackDebugEndpoint }}
+                    </code>
+                  </div>
+
+                  <div class="rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                          {{ t('admin.settings.purchase.callbackDebugPayload') }}
+                        </p>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          {{ t('admin.settings.purchase.callbackDebugPayloadHint') }}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm"
+                        @click="copyCommerceCallbackDebugPayload"
+                      >
+                        {{ t('admin.settings.purchase.callbackDebugPayloadCopy') }}
+                      </button>
+                    </div>
+                    <pre class="mt-3 overflow-x-auto rounded-lg bg-gray-50 px-3 py-3 text-xs text-gray-700 dark:bg-dark-800 dark:text-gray-200"><code>{{ commerceCallbackDebugPayloadJSON }}</code></pre>
+                  </div>
+                </div>
+
+                <div class="mt-4 rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        {{ t('admin.settings.purchase.callbackDebugCurl') }}
+                      </p>
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {{ t('admin.settings.purchase.callbackDebugCurlHint') }}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      @click="copyCommerceCallbackDebugCurl"
+                    >
+                      {{ t('admin.settings.purchase.callbackDebugCurlCopy') }}
+                    </button>
+                  </div>
+                  <pre class="mt-3 overflow-x-auto rounded-lg bg-gray-50 px-3 py-3 text-xs text-gray-700 dark:bg-dark-800 dark:text-gray-200"><code>{{ commerceCallbackDebugCurl }}</code></pre>
+                </div>
+
+                <div class="mt-4 rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-medium text-gray-900 dark:text-white">
+                        {{ t('admin.settings.purchase.manualCompleteTitle') }}
+                      </p>
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {{ t('admin.settings.purchase.manualCompleteHint') }}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn btn-primary btn-sm"
+                      :disabled="commerceManualCompleteSubmitting"
+                      @click="submitCommerceManualCompleteDebug"
+                    >
+                      {{
+                        commerceManualCompleteSubmitting
+                          ? t('admin.settings.purchase.manualCompleteSubmitting')
+                          : t('admin.settings.purchase.manualCompleteAction')
+                      }}
+                    </button>
+                  </div>
+
+                  <div class="mt-4 grid gap-4 xl:grid-cols-2">
+                    <div class="rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                      <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                            {{ t('admin.settings.purchase.manualCompletePayload') }}
+                          </p>
+                          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            {{ t('admin.settings.purchase.manualCompletePayloadHint') }}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          class="btn btn-secondary btn-sm"
+                          @click="copyCommerceManualCompletePayload"
+                        >
+                          {{ t('admin.settings.purchase.manualCompletePayloadCopy') }}
+                        </button>
+                      </div>
+                      <pre class="mt-3 overflow-x-auto rounded-lg bg-gray-50 px-3 py-3 text-xs text-gray-700 dark:bg-dark-800 dark:text-gray-200"><code>{{ commerceManualCompletePayloadJSON }}</code></pre>
+                    </div>
+
+                    <div class="rounded-2xl border border-gray-200 p-4 dark:border-dark-700">
+                      <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                            {{ t('admin.settings.purchase.manualCompleteResult') }}
+                          </p>
+                          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            {{ t('admin.settings.purchase.manualCompleteResultHint') }}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          class="btn btn-secondary btn-sm"
+                          :disabled="!commerceManualCompleteResult"
+                          @click="copyCommerceManualCompleteResult"
+                        >
+                          {{ t('admin.settings.purchase.manualCompleteResultCopy') }}
+                        </button>
+                      </div>
+                      <pre class="mt-3 overflow-x-auto rounded-lg bg-gray-50 px-3 py-3 text-xs text-gray-700 dark:bg-dark-800 dark:text-gray-200"><code>{{ commerceManualCompleteResult ? JSON.stringify(commerceManualCompleteResult, null, 2) : t('admin.settings.purchase.manualCompleteResultEmptyState') }}</code></pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Integration Docs -->
@@ -1791,13 +2436,14 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { adminAPI } from '@/api'
 import type {
   SystemSettings,
   UpdateSettingsRequest,
   DefaultSubscriptionSetting
 } from '@/api/admin/settings'
-import type { AdminGroup } from '@/types'
+import type { AdminGroup, CommerceOrder, CommercePaymentProviderConfig } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Icon from '@/components/icons/Icon.vue'
 import Select from '@/components/common/Select.vue'
@@ -1818,6 +2464,7 @@ import {
 } from '@/utils/registrationEmailPolicy'
 
 const { t } = useI18n()
+const router = useRouter()
 const appStore = useAppStore()
 const adminSettingsStore = useAdminSettingsStore()
 
@@ -1839,6 +2486,10 @@ const saving = ref(false)
 const testingSmtp = ref(false)
 const sendingTestEmail = ref(false)
 const testEmailAddress = ref('')
+const commerceManualCompleteSubmitting = ref(false)
+const commerceManualCompleteResult = ref<CommerceOrder | null>(null)
+const commerceOrderLookupLoading = ref(false)
+const commerceOrderLookupResult = ref<CommerceOrder | null>(null)
 const registrationEmailSuffixWhitelistTags = ref<string[]>([])
 const registrationEmailSuffixWhitelistDraft = ref('')
 
@@ -1904,6 +2555,7 @@ type SettingsForm = SystemSettings & {
   smtp_password: string
   turnstile_secret_key: string
   linuxdo_connect_client_secret: string
+  commerce_callback_secret: string
 }
 
 const form = reactive<SettingsForm>({
@@ -1929,6 +2581,13 @@ const form = reactive<SettingsForm>({
   hide_ccs_import_button: false,
   purchase_subscription_enabled: false,
   purchase_subscription_url: '',
+  native_marketplace_enabled: false,
+  native_wallet_enabled: false,
+  native_orders_enabled: false,
+  native_purchase_mode: 'iframe' as 'iframe' | 'native',
+  commerce_callback_secret: '',
+  commerce_callback_secret_configured: false,
+  commerce_payment_providers: [] as CommercePaymentProviderConfig[],
   sora_client_enabled: false,
   custom_menu_items: [] as Array<{id: string; label: string; icon_svg: string; url: string; visibility: 'user' | 'admin'; sort_order: number}>,
   frontend_url: '',
@@ -2058,12 +2717,310 @@ const linuxdoRedirectUrlSuggestion = computed(() => {
   return `${origin}/api/v1/auth/oauth/linuxdo/callback`
 })
 
+const commerceCallbackHeaderName = 'X-Commerce-Callback-Secret'
+const commerceCallbackEndpointSuggestion = computed(() => {
+  if (typeof window === 'undefined') {
+    return '/api/v1/commerce/providers/{provider}/callback'
+  }
+  const origin =
+    window.location.origin || `${window.location.protocol}//${window.location.host}`
+  return `${origin}/api/v1/commerce/providers/{provider}/callback`
+})
+
+const commercePaymentProviderExamples: CommercePaymentProviderConfig[] = [
+  {
+    code: 'alipay',
+    name: 'Alipay',
+    description: 'QR checkout for mainland China users',
+    icon: 'https://pay.example.com/assets/alipay.png',
+    checkout_url:
+      'https://pay.example.com/alipay/checkout?order_no={order_no}&amount={amount}&user_id={user_id}',
+    enabled: true,
+    sort_order: 10
+  },
+  {
+    code: 'wechat_pay',
+    name: 'WeChat Pay',
+    description: 'Suitable for WeChat and QR payment scenarios',
+    icon: 'https://pay.example.com/assets/wechat-pay.png',
+    checkout_url:
+      'https://pay.example.com/wechat/checkout?order_no={order_no}&amount={amount}&currency={currency}',
+    enabled: true,
+    sort_order: 20
+  }
+]
+
+const commercePaymentProviderExampleJSON = computed(() =>
+  JSON.stringify(commercePaymentProviderExamples, null, 2)
+)
+
+const commerceCallbackDebugForm = reactive({
+  provider: '',
+  order_id: null as number | null,
+  order_no: 'CO20260319000123',
+  provider_trade_no: 'ALI20260319008888',
+  paid_amount: 99,
+  paid_currency: 'CNY'
+})
+
+const commerceFirstEnabledProviderCode = computed(() => {
+  const firstEnabledProvider = form.commerce_payment_providers.find(
+    (item) => item.enabled && item.code.trim()
+  )
+  return firstEnabledProvider?.code.trim() || ''
+})
+
+const commerceCallbackDebugProvider = computed(() => {
+  const manualProvider = commerceCallbackDebugForm.provider.trim()
+  if (manualProvider) {
+    return manualProvider
+  }
+  return commerceFirstEnabledProviderCode.value
+})
+
+const commerceCallbackDebugEndpoint = computed(() =>
+  commerceCallbackEndpointSuggestion.value.replace(
+    '{provider}',
+    commerceCallbackDebugProvider.value || 'your_provider'
+  )
+)
+
+const commerceCallbackDebugPayload = computed(() => {
+  const payload: Record<string, unknown> = {
+    order_no: commerceCallbackDebugForm.order_no.trim() || 'CO20260319000123',
+    request_payload: {
+      trade_status: 'TRADE_SUCCESS'
+    },
+    callback_payload: {
+      notify_id: 'notify_123'
+    }
+  }
+
+  const providerTradeNo = commerceCallbackDebugForm.provider_trade_no.trim()
+  if (providerTradeNo) {
+    payload.provider_trade_no = providerTradeNo
+  }
+
+  if (Number.isFinite(commerceCallbackDebugForm.paid_amount)) {
+    payload.paid_amount = Number(commerceCallbackDebugForm.paid_amount)
+  }
+
+  const paidCurrency = commerceCallbackDebugForm.paid_currency.trim().toUpperCase()
+  if (paidCurrency) {
+    payload.paid_currency = paidCurrency
+  }
+
+  return payload
+})
+
+const commerceCallbackDebugPayloadJSON = computed(() =>
+  JSON.stringify(commerceCallbackDebugPayload.value, null, 2)
+)
+
+const commerceManualCompletePayload = computed(() => ({
+  payment_provider: commerceCallbackDebugProvider.value || undefined,
+  provider_trade_no: commerceCallbackDebugForm.provider_trade_no.trim() || undefined,
+  paid_amount: Number.isFinite(commerceCallbackDebugForm.paid_amount)
+    ? Number(commerceCallbackDebugForm.paid_amount)
+    : undefined,
+  paid_currency: commerceCallbackDebugForm.paid_currency.trim().toUpperCase() || undefined,
+  request_payload: JSON.stringify({
+    source: 'settings_debug_panel',
+    trade_status: 'TRADE_SUCCESS',
+    order_no: commerceCallbackDebugForm.order_no.trim() || undefined
+  }),
+  callback_payload: JSON.stringify({
+    source: 'settings_debug_panel',
+    notify_id: 'notify_123'
+  })
+}))
+
+const commerceManualCompletePayloadJSON = computed(() =>
+  JSON.stringify(commerceManualCompletePayload.value, null, 2)
+)
+
+const commerceCallbackDebugCurl = computed(() => {
+  return [
+    `curl -X POST "${commerceCallbackDebugEndpoint.value}" \\`,
+    '  -H "Content-Type: application/json" \\',
+    `  -H "${commerceCallbackHeaderName}: <your-secret>" \\`,
+    `  -d '${commerceCallbackDebugPayloadJSON.value}'`
+  ].join('\n')
+})
+
+const commerceCallbackCurlExample = computed(() => {
+  const endpoint = commerceCallbackEndpointSuggestion.value.replace('{provider}', 'alipay')
+  const payload = JSON.stringify(
+    {
+      order_no: 'CO20260319000123',
+      provider_trade_no: 'ALI20260319008888',
+      paid_amount: 99,
+      paid_currency: 'CNY',
+      request_payload: {
+        trade_status: 'TRADE_SUCCESS'
+      },
+      callback_payload: {
+        notify_id: 'notify_123'
+      }
+    },
+    null,
+    2
+  )
+
+  return [
+    `curl -X POST "${endpoint}" \\`,
+    '  -H "Content-Type: application/json" \\',
+    `  -H "${commerceCallbackHeaderName}: <your-secret>" \\`,
+    `  -d '${payload}'`
+  ].join('\n')
+})
+
 async function setAndCopyLinuxdoRedirectUrl() {
   const url = linuxdoRedirectUrlSuggestion.value
   if (!url) return
 
   form.linuxdo_connect_redirect_url = url
   await copyToClipboard(url, t('admin.settings.linuxdo.redirectUrlSetAndCopied'))
+}
+
+async function copyCommerceProviderExample() {
+  await copyToClipboard(
+    commercePaymentProviderExampleJSON.value,
+    t('admin.settings.purchase.providerExampleCopied')
+  )
+}
+
+async function copyCommerceCallbackExample() {
+  await copyToClipboard(
+    commerceCallbackCurlExample.value,
+    t('admin.settings.purchase.callbackExampleCopied')
+  )
+}
+
+async function copyCommerceCallbackDebugPayload() {
+  await copyToClipboard(
+    commerceCallbackDebugPayloadJSON.value,
+    t('admin.settings.purchase.callbackDebugPayloadCopied')
+  )
+}
+
+async function copyCommerceCallbackDebugCurl() {
+  await copyToClipboard(
+    commerceCallbackDebugCurl.value,
+    t('admin.settings.purchase.callbackDebugCurlCopied')
+  )
+}
+
+async function copyCommerceManualCompletePayload() {
+  await copyToClipboard(
+    commerceManualCompletePayloadJSON.value,
+    t('admin.settings.purchase.manualCompletePayloadCopied')
+  )
+}
+
+async function copyCommerceManualCompleteResult() {
+  if (!commerceManualCompleteResult.value) {
+    appStore.showError(t('admin.settings.purchase.manualCompleteResultEmpty'))
+    return
+  }
+  await copyToClipboard(
+    JSON.stringify(commerceManualCompleteResult.value, null, 2),
+    t('admin.settings.purchase.manualCompleteResultCopied')
+  )
+}
+
+function openCommerceOrdersFromLookup() {
+  const orderNo = (commerceOrderLookupResult.value?.order_no || commerceCallbackDebugForm.order_no || '').trim()
+  if (!orderNo) {
+    appStore.showError(t('admin.settings.purchase.callbackDebugLookupOrderNoRequired'))
+    return
+  }
+
+  void router.push({
+    path: '/admin/commerce',
+    query: {
+      tab: 'orders',
+      order_no: orderNo
+    }
+  })
+}
+
+async function lookupCommerceOrderByOrderNo() {
+  const orderNo = commerceCallbackDebugForm.order_no.trim()
+  if (!orderNo) {
+    appStore.showError(t('admin.settings.purchase.callbackDebugLookupOrderNoRequired'))
+    return
+  }
+
+  commerceOrderLookupLoading.value = true
+  try {
+    const response = await adminAPI.commerce.listOrders({
+      order_no: orderNo,
+      page: 1,
+      page_size: 1
+    })
+
+    const order = response.items?.[0] || null
+    if (!order) {
+      commerceOrderLookupResult.value = null
+      appStore.showError(t('admin.settings.purchase.callbackDebugLookupEmpty', { orderNo }))
+      return
+    }
+
+    commerceOrderLookupResult.value = order
+    commerceCallbackDebugForm.order_id = order.id
+    commerceCallbackDebugForm.order_no = order.order_no
+    commerceCallbackDebugForm.paid_amount = order.amount
+    commerceCallbackDebugForm.paid_currency = order.currency
+    if (
+      (!commerceCallbackDebugForm.provider || !commerceCallbackDebugForm.provider.trim()) &&
+      order.payment_provider &&
+      order.payment_provider !== 'manual'
+    ) {
+      commerceCallbackDebugForm.provider = order.payment_provider
+    }
+
+    appStore.showSuccess(
+      t('admin.settings.purchase.callbackDebugLookupSuccess', { orderNo: order.order_no })
+    )
+  } catch (error: any) {
+    appStore.showError(error?.response?.data?.detail || error?.message || t('common.error'))
+  } finally {
+    commerceOrderLookupLoading.value = false
+  }
+}
+
+async function submitCommerceManualCompleteDebug() {
+  const orderID = Number(commerceCallbackDebugForm.order_id)
+  if (!Number.isInteger(orderID) || orderID <= 0) {
+    appStore.showError(t('admin.settings.purchase.manualCompleteOrderIdRequired'))
+    return
+  }
+
+  if (!window.confirm(t('admin.settings.purchase.manualCompleteConfirm', { orderId: orderID }))) {
+    return
+  }
+
+  commerceManualCompleteSubmitting.value = true
+  try {
+    const result = await adminAPI.commerce.manualCompleteOrder(orderID, commerceManualCompletePayload.value)
+    commerceManualCompleteResult.value = result
+    commerceOrderLookupResult.value = result
+    commerceCallbackDebugForm.order_id = result.id
+    commerceCallbackDebugForm.order_no = result.order_no
+    commerceCallbackDebugForm.paid_amount = result.amount
+    commerceCallbackDebugForm.paid_currency = result.currency
+    if (result.payment_provider && result.payment_provider !== 'manual') {
+      commerceCallbackDebugForm.provider = result.payment_provider
+    }
+    appStore.showSuccess(
+      t('admin.settings.purchase.manualCompleteSuccess', { orderNo: result.order_no })
+    )
+  } catch (error: any) {
+    appStore.showError(error?.response?.data?.detail || error?.message || t('common.error'))
+  } finally {
+    commerceManualCompleteSubmitting.value = false
+  }
 }
 
 // Custom menu item management
@@ -2099,6 +3056,26 @@ function moveMenuItem(index: number, direction: -1 | 1) {
   })
 }
 
+function createEmptyCommercePaymentProvider(): CommercePaymentProviderConfig {
+  return {
+    code: '',
+    name: '',
+    description: '',
+    icon: '',
+    checkout_url: '',
+    enabled: true,
+    sort_order: 100
+  }
+}
+
+function addCommercePaymentProvider() {
+  form.commerce_payment_providers.push(createEmptyCommercePaymentProvider())
+}
+
+function removeCommercePaymentProvider(index: number) {
+  form.commerce_payment_providers.splice(index, 1)
+}
+
 async function loadSettings() {
   loading.value = true
   try {
@@ -2117,6 +3094,7 @@ async function loadSettings() {
       settings.registration_email_suffix_whitelist
     )
     registrationEmailSuffixWhitelistDraft.value = ''
+    form.commerce_callback_secret = ''
     form.smtp_password = ''
     form.turnstile_secret_key = ''
     form.linuxdo_connect_client_secret = ''
@@ -2207,6 +3185,20 @@ async function saveSettings() {
       hide_ccs_import_button: form.hide_ccs_import_button,
       purchase_subscription_enabled: form.purchase_subscription_enabled,
       purchase_subscription_url: form.purchase_subscription_url,
+      native_marketplace_enabled: form.native_marketplace_enabled,
+      native_wallet_enabled: form.native_wallet_enabled,
+      native_orders_enabled: form.native_orders_enabled,
+      native_purchase_mode: form.native_purchase_mode,
+      commerce_callback_secret: form.commerce_callback_secret || undefined,
+      commerce_payment_providers: form.commerce_payment_providers.map((item) => ({
+        code: item.code,
+        name: item.name,
+        description: item.description,
+        icon: item.icon,
+        checkout_url: item.checkout_url,
+        enabled: item.enabled,
+        sort_order: item.sort_order
+      })),
       sora_client_enabled: form.sora_client_enabled,
       custom_menu_items: form.custom_menu_items,
       frontend_url: form.frontend_url,
@@ -2240,6 +3232,7 @@ async function saveSettings() {
       updated.registration_email_suffix_whitelist
     )
     registrationEmailSuffixWhitelistDraft.value = ''
+    form.commerce_callback_secret = ''
     form.smtp_password = ''
     form.turnstile_secret_key = ''
     form.linuxdo_connect_client_secret = ''

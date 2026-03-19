@@ -78,6 +78,12 @@ func RegisterAuthRoutes(
 		settings.GET("/public", h.Setting.GetPublicSettings)
 	}
 
+	// 公开商业化回调（由共享密钥保护）
+	commerce := v1.Group("/commerce")
+	{
+		commerce.POST("/providers/:provider/callback", h.Commerce.HandleProviderCallback)
+	}
+
 	// 需要认证的当前用户信息
 	authenticated := v1.Group("")
 	authenticated.Use(gin.HandlerFunc(jwtAuth))

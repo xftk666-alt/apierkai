@@ -25,6 +25,7 @@ func RegisterAdminRoutes(
 
 		// 分组管理
 		registerGroupRoutes(admin, h)
+		registerCommerceRoutes(admin, h)
 
 		// 账号管理
 		registerAccountRoutes(admin, h)
@@ -239,6 +240,20 @@ func registerGroupRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		groups.PUT("/:id/rate-multipliers", h.Admin.Group.BatchSetGroupRateMultipliers)
 		groups.DELETE("/:id/rate-multipliers", h.Admin.Group.ClearGroupRateMultipliers)
 		groups.GET("/:id/api-keys", h.Admin.Group.GetGroupAPIKeys)
+	}
+}
+
+func registerCommerceRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	commerce := admin.Group("/commerce")
+	{
+		commerce.GET("/catalog", h.Admin.Commerce.GetCatalog)
+		commerce.GET("/orders", h.Admin.Commerce.ListOrders)
+		commerce.GET("/wallet/ledger", h.Admin.Commerce.ListWalletLedger)
+		commerce.POST("/orders/:id/manual-complete", h.Admin.Commerce.ManualCompleteOrder)
+		commerce.POST("/products", h.Admin.Commerce.CreateProduct)
+		commerce.PUT("/products/:id", h.Admin.Commerce.UpdateProduct)
+		commerce.POST("/models", h.Admin.Commerce.CreateModel)
+		commerce.PUT("/models/:id", h.Admin.Commerce.UpdateModel)
 	}
 }
 

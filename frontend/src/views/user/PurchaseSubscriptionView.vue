@@ -69,6 +69,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { useAuthStore } from '@/stores/auth'
@@ -79,6 +80,7 @@ import { buildEmbeddedUrl, detectTheme } from '@/utils/embedded-url'
 const { t, locale } = useI18n()
 const appStore = useAppStore()
 const authStore = useAuthStore()
+const router = useRouter()
 
 const loading = ref(false)
 const purchaseTheme = ref<'light' | 'dark'>('light')
@@ -86,6 +88,15 @@ let themeObserver: MutationObserver | null = null
 
 const purchaseEnabled = computed(() => {
   return appStore.cachedPublicSettings?.purchase_subscription_enabled ?? false
+})
+const nativeMarketplaceEnabled = computed(() => {
+  return appStore.cachedPublicSettings?.native_marketplace_enabled ?? false
+})
+const nativePurchaseMode = computed(() => {
+  return appStore.cachedPublicSettings?.native_purchase_mode ?? 'iframe'
+})
+const shouldRedirectToMarketplace = computed(() => {
+  return purchaseEnabled.value && nativePurchaseMode.value === 'native' && nativeMarketplaceEnabled.value
 })
 
 const purchaseUrl = computed(() => {
@@ -111,12 +122,25 @@ onMounted(async () => {
     })
   }
 
-  if (appStore.publicSettingsLoaded) return
+  if (appStore.publicSettingsLoaded) {
+    if (shouldRedirectToMarketplace.value) {
+      await router.replace('/marketplace')
+    }
+    return
+  }
   loading.value = true
   try {
     await appStore.fetchPublicSettings()
+    if (shouldRedirectToMarketplace.value) {
+      await router.replace('/marketplace')
+      return
+    }
   } finally {
     loading.value = false
+  }
+
+  if (shouldRedirectToMarketplace.value) {
+    await router.replace('/marketplace')
   }
 })
 

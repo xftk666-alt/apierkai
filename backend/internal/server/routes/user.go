@@ -90,5 +90,13 @@ func RegisterUserRoutes(
 			subscriptions.GET("/progress", h.Subscription.GetProgress)
 			subscriptions.GET("/summary", h.Subscription.GetSummary)
 		}
+
+		commerce := authenticated.Group("/commerce")
+		{
+			commerce.GET("/catalog", h.Commerce.GetCatalog)
+			commerce.POST("/orders", h.Commerce.CreateOrder)
+			commerce.GET("/orders", h.Commerce.ListOrders)
+			commerce.GET("/wallet/ledger", h.Commerce.ListWalletLedger)
+		}
 	}
 }

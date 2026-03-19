@@ -180,6 +180,56 @@ const siteName = computed(() => appStore.siteName)
 const siteLogo = computed(() => appStore.siteLogo)
 const siteVersion = computed(() => appStore.siteVersion)
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
+const primaryCommerceNavItems = computed((): NavItem[] => {
+  const settings = appStore.cachedPublicSettings
+  if (!settings?.purchase_subscription_enabled) {
+    return []
+  }
+  if (settings.native_purchase_mode === 'native' && settings.native_marketplace_enabled) {
+    return [
+      {
+        path: '/marketplace',
+        label: t('nav.marketplace'),
+        icon: RechargeSubscriptionIcon,
+        hideInSimpleMode: true
+      }
+    ]
+  }
+  return [
+    {
+      path: '/purchase',
+      label: t('nav.buySubscription'),
+      icon: RechargeSubscriptionIcon,
+      hideInSimpleMode: true
+    }
+  ]
+})
+
+const secondaryCommerceNavItems = computed((): NavItem[] => {
+  const settings = appStore.cachedPublicSettings
+  if (!settings?.purchase_subscription_enabled || settings.native_purchase_mode !== 'native') {
+    return []
+  }
+
+  const items: NavItem[] = []
+  if (settings.native_wallet_enabled) {
+    items.push({
+      path: '/wallet',
+      label: t('nav.wallet'),
+      icon: CreditCardIcon,
+      hideInSimpleMode: true
+    })
+  }
+  if (settings.native_orders_enabled) {
+    items.push({
+      path: '/orders',
+      label: t('nav.orders'),
+      icon: TicketIcon,
+      hideInSimpleMode: true
+    })
+  }
+  return items
+})
 
 // SVG Icon Components
 const DashboardIcon = {
@@ -492,16 +542,8 @@ const userNavItems = computed((): NavItem[] => {
     ...(appStore.cachedPublicSettings?.sora_client_enabled
       ? [{ path: '/sora', label: t('nav.sora'), icon: SoraIcon }]
       : []),
-    ...(appStore.cachedPublicSettings?.purchase_subscription_enabled
-      ? [
-          {
-            path: '/purchase',
-            label: t('nav.buySubscription'),
-            icon: RechargeSubscriptionIcon,
-            hideInSimpleMode: true
-          }
-        ]
-      : []),
+    ...primaryCommerceNavItems.value,
+    ...secondaryCommerceNavItems.value,
     { path: '/redeem', label: t('nav.redeem'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
     ...customMenuItemsForUser.value.map((item): NavItem => ({
@@ -523,16 +565,8 @@ const personalNavItems = computed((): NavItem[] => {
     ...(appStore.cachedPublicSettings?.sora_client_enabled
       ? [{ path: '/sora', label: t('nav.sora'), icon: SoraIcon }]
       : []),
-    ...(appStore.cachedPublicSettings?.purchase_subscription_enabled
-      ? [
-          {
-            path: '/purchase',
-            label: t('nav.buySubscription'),
-            icon: RechargeSubscriptionIcon,
-            hideInSimpleMode: true
-          }
-        ]
-      : []),
+    ...primaryCommerceNavItems.value,
+    ...secondaryCommerceNavItems.value,
     { path: '/redeem', label: t('nav.redeem'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
     ...customMenuItemsForUser.value.map((item): NavItem => ({
@@ -569,6 +603,7 @@ const adminNavItems = computed((): NavItem[] => {
     { path: '/admin/users', label: t('nav.users'), icon: UsersIcon, hideInSimpleMode: true },
     { path: '/admin/groups', label: t('nav.groups'), icon: FolderIcon, hideInSimpleMode: true },
     { path: '/admin/subscriptions', label: t('nav.subscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
+    { path: '/admin/commerce', label: t('nav.commerce'), icon: RechargeSubscriptionIcon, hideInSimpleMode: true },
     { path: '/admin/accounts', label: t('nav.accounts'), icon: GlobeIcon },
     { path: '/admin/announcements', label: t('nav.announcements'), icon: BellIcon },
     { path: '/admin/proxies', label: t('nav.proxies'), icon: ServerIcon },

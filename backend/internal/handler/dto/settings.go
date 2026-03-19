@@ -15,6 +15,16 @@ type CustomMenuItem struct {
 	SortOrder  int    `json:"sort_order"`
 }
 
+type CommercePaymentProvider struct {
+	Code        string `json:"code"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Icon        string `json:"icon"`
+	CheckoutURL string `json:"checkout_url"`
+	Enabled     bool   `json:"enabled"`
+	SortOrder   int    `json:"sort_order"`
+}
+
 // SystemSettings represents the admin settings API response payload.
 type SystemSettings struct {
 	RegistrationEnabled              bool     `json:"registration_enabled"`
@@ -54,6 +64,12 @@ type SystemSettings struct {
 	HideCcsImportButton         bool             `json:"hide_ccs_import_button"`
 	PurchaseSubscriptionEnabled bool             `json:"purchase_subscription_enabled"`
 	PurchaseSubscriptionURL     string           `json:"purchase_subscription_url"`
+	NativeMarketplaceEnabled    bool             `json:"native_marketplace_enabled"`
+	NativeWalletEnabled         bool             `json:"native_wallet_enabled"`
+	NativeOrdersEnabled         bool             `json:"native_orders_enabled"`
+	NativePurchaseMode          string           `json:"native_purchase_mode"`
+	CommerceCallbackSecretConfigured bool       `json:"commerce_callback_secret_configured"`
+	CommercePaymentProviders    []CommercePaymentProvider `json:"commerce_payment_providers"`
 	SoraClientEnabled           bool             `json:"sora_client_enabled"`
 	CustomMenuItems             []CustomMenuItem `json:"custom_menu_items"`
 
@@ -112,6 +128,10 @@ type PublicSettings struct {
 	HideCcsImportButton              bool             `json:"hide_ccs_import_button"`
 	PurchaseSubscriptionEnabled      bool             `json:"purchase_subscription_enabled"`
 	PurchaseSubscriptionURL          string           `json:"purchase_subscription_url"`
+	NativeMarketplaceEnabled         bool             `json:"native_marketplace_enabled"`
+	NativeWalletEnabled              bool             `json:"native_wallet_enabled"`
+	NativeOrdersEnabled              bool             `json:"native_orders_enabled"`
+	NativePurchaseMode               string           `json:"native_purchase_mode"`
 	CustomMenuItems                  []CustomMenuItem `json:"custom_menu_items"`
 	LinuxDoOAuthEnabled              bool             `json:"linuxdo_oauth_enabled"`
 	SoraClientEnabled                bool             `json:"sora_client_enabled"`
@@ -216,4 +236,17 @@ func ParseUserVisibleMenuItems(raw string) []CustomMenuItem {
 		}
 	}
 	return filtered
+}
+
+func ParseCommercePaymentProviders(raw string) []CommercePaymentProvider {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw == "[]" {
+		return []CommercePaymentProvider{}
+	}
+
+	var items []CommercePaymentProvider
+	if err := json.Unmarshal([]byte(raw), &items); err != nil {
+		return []CommercePaymentProvider{}
+	}
+	return items
 }

@@ -166,6 +166,42 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/marketplace',
+    name: 'Marketplace',
+    component: () => import('@/views/user/MarketplaceView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Marketplace',
+      titleKey: 'marketplace.title',
+      descriptionKey: 'marketplace.description'
+    }
+  },
+  {
+    path: '/orders',
+    name: 'Orders',
+    component: () => import('@/views/user/OrdersView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Orders',
+      titleKey: 'orders.title',
+      descriptionKey: 'orders.description'
+    }
+  },
+  {
+    path: '/wallet',
+    name: 'Wallet',
+    component: () => import('@/views/user/WalletView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Wallet',
+      titleKey: 'wallet.title',
+      descriptionKey: 'wallet.description'
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/user/ProfileView.vue'),
@@ -288,6 +324,18 @@ const routes: RouteRecordRaw[] = [
       title: 'Subscription Management',
       titleKey: 'admin.subscriptions.title',
       descriptionKey: 'admin.subscriptions.description'
+    }
+  },
+  {
+    path: '/admin/commerce',
+    name: 'AdminCommerce',
+    component: () => import('@/views/admin/CommerceView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Commerce',
+      titleKey: 'admin.commerce.title',
+      descriptionKey: 'admin.commerce.description'
     }
   },
   {
@@ -496,8 +544,13 @@ router.beforeEach((to, _from, next) => {
     const restrictedPaths = [
       '/admin/groups',
       '/admin/subscriptions',
+      '/admin/commerce',
       '/admin/redeem',
       '/subscriptions',
+      '/marketplace',
+      '/orders',
+      '/wallet',
+      '/purchase',
       '/redeem'
     ]
 

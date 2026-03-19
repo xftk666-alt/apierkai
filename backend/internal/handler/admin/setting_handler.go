@@ -108,6 +108,12 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		HideCcsImportButton:                  settings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:          settings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:              settings.PurchaseSubscriptionURL,
+		NativeMarketplaceEnabled:             settings.NativeMarketplaceEnabled,
+		NativeWalletEnabled:                  settings.NativeWalletEnabled,
+		NativeOrdersEnabled:                  settings.NativeOrdersEnabled,
+		NativePurchaseMode:                   settings.NativePurchaseMode,
+		CommerceCallbackSecretConfigured:     settings.CommerceCallbackSecretConfigured,
+		CommercePaymentProviders:             dto.ParseCommercePaymentProviders(settings.CommercePaymentProviders),
 		SoraClientEnabled:                    settings.SoraClientEnabled,
 		CustomMenuItems:                      dto.ParseCustomMenuItems(settings.CustomMenuItems),
 		DefaultConcurrency:                   settings.DefaultConcurrency,
@@ -173,6 +179,12 @@ type UpdateSettingsRequest struct {
 	HideCcsImportButton         bool                  `json:"hide_ccs_import_button"`
 	PurchaseSubscriptionEnabled *bool                 `json:"purchase_subscription_enabled"`
 	PurchaseSubscriptionURL     *string               `json:"purchase_subscription_url"`
+	NativeMarketplaceEnabled    *bool                 `json:"native_marketplace_enabled"`
+	NativeWalletEnabled         *bool                 `json:"native_wallet_enabled"`
+	NativeOrdersEnabled         *bool                 `json:"native_orders_enabled"`
+	NativePurchaseMode          *string               `json:"native_purchase_mode"`
+	CommerceCallbackSecret      string                `json:"commerce_callback_secret"`
+	CommercePaymentProviders    *[]dto.CommercePaymentProvider `json:"commerce_payment_providers"`
 	SoraClientEnabled           bool                  `json:"sora_client_enabled"`
 	CustomMenuItems             *[]dto.CustomMenuItem `json:"custom_menu_items"`
 
@@ -309,10 +321,31 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 	if req.PurchaseSubscriptionURL != nil {
 		purchaseURL = strings.TrimSpace(*req.PurchaseSubscriptionURL)
 	}
+	nativeMarketplaceEnabled := previousSettings.NativeMarketplaceEnabled
+	if req.NativeMarketplaceEnabled != nil {
+		nativeMarketplaceEnabled = *req.NativeMarketplaceEnabled
+	}
+	nativeWalletEnabled := previousSettings.NativeWalletEnabled
+	if req.NativeWalletEnabled != nil {
+		nativeWalletEnabled = *req.NativeWalletEnabled
+	}
+	nativeOrdersEnabled := previousSettings.NativeOrdersEnabled
+	if req.NativeOrdersEnabled != nil {
+		nativeOrdersEnabled = *req.NativeOrdersEnabled
+	}
+	nativePurchaseMode := previousSettings.NativePurchaseMode
+	if req.NativePurchaseMode != nil {
+		nativePurchaseMode = *req.NativePurchaseMode
+	}
+	nativePurchaseMode = service.NormalizeCommercePurchaseMode(nativePurchaseMode)
+	commerceCallbackSecret := strings.TrimSpace(req.CommerceCallbackSecret)
+	if commerceCallbackSecret == "" {
+		commerceCallbackSecret = previousSettings.CommerceCallbackSecret
+	}
 
 	// - 启用时要求 URL 合法且非空
 	// - 禁用时允许为空；若提供了 URL 也做基本校验，避免误配置
-	if purchaseEnabled {
+	if purchaseEnabled && nativePurchaseMode == service.CommercePurchaseModeIframe {
 		if purchaseURL == "" {
 			response.BadRequest(c, "Purchase Subscription URL is required when enabled")
 			return
@@ -326,6 +359,33 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			response.BadRequest(c, "Purchase Subscription URL must be an absolute http(s) URL")
 			return
 		}
+	}
+
+	commercePaymentProvidersJSON := previousSettings.CommercePaymentProviders
+	if req.CommercePaymentProviders != nil {
+		items := make([]service.CommercePaymentProviderSetting, 0, len(*req.CommercePaymentProviders))
+		for _, item := range *req.CommercePaymentProviders {
+			items = append(items, service.CommercePaymentProviderSetting{
+				Code:        item.Code,
+				Name:        item.Name,
+				Description: item.Description,
+				Icon:        item.Icon,
+				CheckoutURL: item.CheckoutURL,
+				Enabled:     item.Enabled,
+				SortOrder:   item.SortOrder,
+			})
+		}
+		normalizedProviders, err := service.NormalizeCommercePaymentProviderSettings(items)
+		if err != nil {
+			response.BadRequest(c, err.Error())
+			return
+		}
+		providersBytes, err := json.Marshal(normalizedProviders)
+		if err != nil {
+			response.BadRequest(c, "Failed to serialize commerce payment providers")
+			return
+		}
+		commercePaymentProvidersJSON = string(providersBytes)
 	}
 
 	// Frontend URL 验证
@@ -475,6 +535,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		HideCcsImportButton:              req.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:      purchaseEnabled,
 		PurchaseSubscriptionURL:          purchaseURL,
+		NativeMarketplaceEnabled:         nativeMarketplaceEnabled,
+		NativeWalletEnabled:              nativeWalletEnabled,
+		NativeOrdersEnabled:              nativeOrdersEnabled,
+		NativePurchaseMode:               nativePurchaseMode,
+		CommerceCallbackSecret:           commerceCallbackSecret,
+		CommercePaymentProviders:         commercePaymentProvidersJSON,
 		SoraClientEnabled:                req.SoraClientEnabled,
 		CustomMenuItems:                  customMenuJSON,
 		DefaultConcurrency:               req.DefaultConcurrency,
@@ -571,6 +637,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		HideCcsImportButton:                  updatedSettings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:          updatedSettings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:              updatedSettings.PurchaseSubscriptionURL,
+		NativeMarketplaceEnabled:             updatedSettings.NativeMarketplaceEnabled,
+		NativeWalletEnabled:                  updatedSettings.NativeWalletEnabled,
+		NativeOrdersEnabled:                  updatedSettings.NativeOrdersEnabled,
+		NativePurchaseMode:                   updatedSettings.NativePurchaseMode,
+		CommerceCallbackSecretConfigured:     updatedSettings.CommerceCallbackSecretConfigured,
+		CommercePaymentProviders:             dto.ParseCommercePaymentProviders(updatedSettings.CommercePaymentProviders),
 		SoraClientEnabled:                    updatedSettings.SoraClientEnabled,
 		CustomMenuItems:                      dto.ParseCustomMenuItems(updatedSettings.CustomMenuItems),
 		DefaultConcurrency:                   updatedSettings.DefaultConcurrency,
@@ -755,6 +827,24 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.PurchaseSubscriptionURL != after.PurchaseSubscriptionURL {
 		changed = append(changed, "purchase_subscription_url")
+	}
+	if before.NativeMarketplaceEnabled != after.NativeMarketplaceEnabled {
+		changed = append(changed, "native_marketplace_enabled")
+	}
+	if before.NativeWalletEnabled != after.NativeWalletEnabled {
+		changed = append(changed, "native_wallet_enabled")
+	}
+	if before.NativeOrdersEnabled != after.NativeOrdersEnabled {
+		changed = append(changed, "native_orders_enabled")
+	}
+	if before.NativePurchaseMode != after.NativePurchaseMode {
+		changed = append(changed, "native_purchase_mode")
+	}
+	if before.CommerceCallbackSecret != after.CommerceCallbackSecret {
+		changed = append(changed, "commerce_callback_secret")
+	}
+	if before.CommercePaymentProviders != after.CommercePaymentProviders {
+		changed = append(changed, "commerce_payment_providers")
 	}
 	if before.CustomMenuItems != after.CustomMenuItems {
 		changed = append(changed, "custom_menu_items")

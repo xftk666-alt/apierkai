@@ -9,6 +9,7 @@ type AdminHandlers struct {
 	Dashboard        *admin.DashboardHandler
 	User             *admin.UserHandler
 	Group            *admin.GroupHandler
+	Commerce         *admin.CommerceHandler
 	Account          *admin.AccountHandler
 	Announcement     *admin.AnnouncementHandler
 	DataManagement   *admin.DataManagementHandler
@@ -40,6 +41,7 @@ type Handlers struct {
 	Redeem        *RedeemHandler
 	Subscription  *SubscriptionHandler
 	Announcement  *AnnouncementHandler
+	Commerce      *CommerceHandler
 	Admin         *AdminHandlers
 	Gateway       *GatewayHandler
 	OpenAIGateway *OpenAIGatewayHandler
